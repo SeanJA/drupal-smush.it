@@ -1,0 +1,18 @@
+<?php
+/**
+ * @Author SeanJA <http://seanja.com>
+ * @license MIT <http://www.opensource.org/licenses/mit-license.php>
+ */
+/**
+ * Implementation of hook_install().
+ */
+function smush_it_install() {
+  //add the column for sure
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function smush_it_uninstall() {
+  //drop the column? probably not...
+}

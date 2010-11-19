@@ -1,0 +1,5 @@
+name = SmushIt
+description = smush images
+package = Images
+core = 6.x
+dependencies[] = upload

@@ -1,0 +1,111 @@
+<?php
+/**
+ * @Author SeanJA <http://seanja.com>
+ * @license MIT <http://www.opensource.org/licenses/mit-license.php>
+ */
+
+module_load_include('inc', 'smush_it', 'smush_it.class');
+
+/**
+* Get the document root for the current Drupal installation.
+* $_SERVER['DOCUMENT_ROOT'] is not reliable across all
+* systems, so we need a way to get the correct value.
+* @return (string)
+*/
+function _document_root() {
+  static $root;
+  if(!$root){
+    $absolute_dir = dirname(__FILE__);
+    $relative_dir = drupal_get_path('module', 'smush_it');
+    $root = substr($absolute_dir, 0, -1 * (1 + strlen($relative_dir)));
+  }
+  return $root;
+}
+
+/**
+ *
+ * @global string $base_url
+ * @global string $base_path
+ * @staticvar Smushit $s
+ * @param file $file
+ * @param node $node
+ */
+function _smush_image(&$file, &$node) {
+  static $s;
+  if (!$s) {
+    $s = new Smushit();
+  }
+  global $base_url, $base_path;
+  $filepath = $file['filepath'];
+  $file_url = $base_url . $filepath;
+  $file_url = 'http://thechronicleherald.ca/images/specialfeatures/tis-the-season_part1.png';
+  try{
+    $smushed = $s->compress($file_url);
+    $file = _save_smush_file($file, $smushed, $node);
+    drupal_write_record('files', $file);
+  } catch(Smush_exception $e){
+    //no savings means that the file is as small as it can be (not really an error)
+    if($e->getMessage() != 'No savings'){
+      drupal_set_message($e->getMessage(), 'error');
+    }
+  }
+}
+
+/**
+ * Save the smushed file
+ * @param file $file
+ * @param smushed $smushed
+ * @param node $node
+ * @return file $file
+ */
+function _save_smush_file($file, &$smushed, &$node) {
+  $root_path = _document_root() . '/';
+  $remote = fopen($smushed->dest, "rb");
+  $new_file = $root_path . $file['filepath'] . '.new';
+  //read the file in bit by bit
+  $temp = fopen($new_file, 'w+');
+  while (!feof($remote)) {
+    fwrite($temp, fread($remote, 8192));
+  }
+  fclose($temp);
+  fclose($remote);
+
+  //backup the old file (.old) and replace it with the new file
+  rename($root_path . $file['filepath'], $root_path . $file['filepath'] . '.old');
+  rename($new_file, $root_path . $file['filepath']);
+  $file['filesize'] = $smushed->dest_size;
+  return $file;
+}
+
+/**
+ * Implements hook_nodeapi()
+ * @staticvar string $image_mimes
+ * @param node $node The node being manipulated
+ * @param string $op The operation being performed
+ * @param string $teaser
+ */
+function smush_it_nodeapi(&$node, $op, $teaser) {
+  static $image_mimes;
+  if(!$image_mimes){
+    $image_mimes = array('image/jpeg', 'image/png', 'image/gif');
+  }
+  switch ($op) {
+    case 'insert':
+    case 'update':
+      if (user_access('upload files')) {
+        foreach ($node->files as $fid => $file) {
+          if ($file['new'] && in_array($file['filemime'], $image_mimes)) {
+            _smush_image($file, $node);
+          }
+        }
+      }
+      break;
+  }
+}
+
+/**
+ * implementation of hook_cron()
+ * @TODO: Implement a cron job, would require install and admin options
+ */
+function smush_it_cron(){
+}

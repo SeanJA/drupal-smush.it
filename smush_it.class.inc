@@ -24,7 +24,9 @@ class smushit {
    * Smush.it request URL
    */
   const url = 'http://www.smushit.com/ysmush.it/ws.php';
-
+  /**
+   * @hax php 4 fix
+   */
   public function smushit() {
     $this->__construct();
   }

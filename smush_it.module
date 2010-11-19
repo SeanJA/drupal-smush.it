@@ -38,12 +38,13 @@ function _smush_image(&$file, &$node) {
   }
   $filepath = $file['filepath'];
   $file_url = $base_url . $filepath;
-  //$file_url = 'http://thechronicleherald.ca/images/specialfeatures/tis-the-season_part1.png';
+  $file_url = 'http://thechronicleherald.ca/images/specialfeatures/tis-the-season_part1.png';
   try {
     $smushed = $s->compress($file_url);
     $file = _save_smush_file($file, $smushed, $node);
     //@todo: this doesn't seem to work the way I expected it to
-    drupal_write_record('files', $file);
+    $file_object = (object)$file;
+    drupal_write_record('files', $file_object, array('fid'));
   } catch (Smush_exception $e) {
     //no savings means that the file is as small as it can be (not really an error)
     if ($e->getMessage() != 'No savings') {
@@ -95,7 +96,7 @@ function smush_it_nodeapi(&$node, $op, $teaser) {
     case 'insert':
     case 'update':
       if (user_access('upload files')) {
-        foreach ($node->files as $fid => $file) {
+        foreach ($node->files as &$file) {
           if ($file['new'] && in_array($file['filemime'], $image_mimes)) {
             _smush_image($file, $node);
           }

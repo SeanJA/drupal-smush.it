@@ -42,6 +42,7 @@ function _smush_image(&$file, &$node) {
   try {
     $smushed = $s->compress($file_url);
     $file = _save_smush_file($file, $smushed, $node);
+    //@todo: this doesn't seem to work the way I expected it to
     drupal_write_record('files', $file);
   } catch (Smush_exception $e) {
     //no savings means that the file is as small as it can be (not really an error)

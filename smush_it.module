@@ -38,7 +38,7 @@ function _smush_image(&$file, &$node) {
   }
   $filepath = $file['filepath'];
   $file_url = $base_url . $filepath;
-  $file_url = 'http://thechronicleherald.ca/images/specialfeatures/tis-the-season_part1.png';
+  //$file_url = 'http://thechronicleherald.ca/images/specialfeatures/tis-the-season_part1.png';
   try {
     $smushed = $s->compress($file_url);
     $file = _save_smush_file($file, $smushed, $node);

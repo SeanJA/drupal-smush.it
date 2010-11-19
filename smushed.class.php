@@ -1,9 +1,11 @@
 <?php
+
 /**
  * The useragent string that will be passed to smush.it
  * @var string
  */
-define('SMUSH_IT_USER_AGENT', 'Smush.it Drupal Module '. $base_url);
+define('SMUSH_IT_USER_AGENT', 'Smush.it Drupal Module ' . $base_url);
+
 /**
  * Description: Compresses images using Smush.it
  *
@@ -12,6 +14,7 @@ define('SMUSH_IT_USER_AGENT', 'Smush.it Drupal Module '. $base_url);
  * @author Sean Sandy  http://seanja.com
  */
 class smushit {
+
   /**
    *
    * @var curl_handler
@@ -21,6 +24,7 @@ class smushit {
    * Smush.it request URL
    */
   const url = 'http://www.smushit.com/ysmush.it/ws.php';
+
   /**
    * Make sure any prerequisite are installed.
    */

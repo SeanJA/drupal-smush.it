@@ -1,20 +1,20 @@
 <?php
+
 /**
  * @Author SeanJA <http://seanja.com>
  * @license MIT <http://www.opensource.org/licenses/mit-license.php>
  */
-
 module_load_include('inc', 'smush_it', 'smush_it.class');
 
 /**
-* Get the document root for the current Drupal installation.
-* $_SERVER['DOCUMENT_ROOT'] is not reliable across all
-* systems, so we need a way to get the correct value.
-* @return (string)
-*/
+ * Get the document root for the current Drupal installation.
+ * $_SERVER['DOCUMENT_ROOT'] is not reliable across all
+ * systems, so we need a way to get the correct value.
+ * @return (string)
+ */
 function _document_root() {
   static $root;
-  if(!$root){
+  if (!$root) {
     $absolute_dir = dirname(__FILE__);
     $relative_dir = drupal_get_path('module', 'smush_it');
     $root = substr($absolute_dir, 0, -1 * (1 + strlen($relative_dir)));
@@ -23,7 +23,7 @@ function _document_root() {
 }
 
 /**
- *
+ * Push an image through the smush.it api
  * @global string $base_url
  * @global string $base_path
  * @staticvar Smushit $s
@@ -31,21 +31,21 @@ function _document_root() {
  * @param node $node
  */
 function _smush_image(&$file, &$node) {
+  global $base_url, $base_path;
   static $s;
   if (!$s) {
     $s = new Smushit();
   }
-  global $base_url, $base_path;
   $filepath = $file['filepath'];
   $file_url = $base_url . $filepath;
   //$file_url = 'http://thechronicleherald.ca/images/specialfeatures/tis-the-season_part1.png';
-  try{
+  try {
     $smushed = $s->compress($file_url);
     $file = _save_smush_file($file, $smushed, $node);
     drupal_write_record('files', $file);
-  } catch(Smush_exception $e){
+  } catch (Smush_exception $e) {
     //no savings means that the file is as small as it can be (not really an error)
-    if($e->getMessage() != 'No savings'){
+    if ($e->getMessage() != 'No savings') {
       drupal_set_message($e->getMessage(), 'error');
     }
   }
@@ -59,6 +59,7 @@ function _smush_image(&$file, &$node) {
  * @return file $file
  */
 function _save_smush_file($file, &$smushed, &$node) {
+  //@TODO: there has to be a better way to do this part...
   $root_path = _document_root() . '/';
   $remote = fopen($smushed->dest, "rb");
   $new_file = $root_path . $file['filepath'] . '.new';
@@ -86,7 +87,7 @@ function _save_smush_file($file, &$smushed, &$node) {
  */
 function smush_it_nodeapi(&$node, $op, $teaser) {
   static $image_mimes;
-  if(!$image_mimes){
+  if (!$image_mimes) {
     $image_mimes = array('image/jpeg', 'image/png', 'image/gif');
   }
   switch ($op) {
@@ -107,5 +108,6 @@ function smush_it_nodeapi(&$node, $op, $teaser) {
  * implementation of hook_cron()
  * @TODO: Implement a cron job, would require install and admin options
  */
-function smush_it_cron(){
+function smush_it_cron() {
+
 }

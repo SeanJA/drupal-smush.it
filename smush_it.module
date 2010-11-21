@@ -43,7 +43,7 @@ function _smush_image(&$file) {
   
   if(!$smush_it_testing){
     //use the actual file
-    $file_url = $base_url . $filepath;
+    $file_url = $base_url . DIRECTORY_SEPARATOR . $filepath;
   } else {
     //use a web accessible file set in the settings section
     $file_url = $smush_it_test_image;
@@ -76,7 +76,7 @@ function _smush_image(&$file) {
       drupal_write_record('smush_it', $smush_it_object);
     } else {
       //An actual error! Send it to the user
-      drupal_set_message($e->getMessage(), 'error');
+      drupal_set_message($e->getMessage() . ': ' . $file_url, 'error');
     }
   }
 }

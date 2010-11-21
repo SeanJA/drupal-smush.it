@@ -2,19 +2,71 @@
 
 /**
  * @Author SeanJA <http://seanja.com>
- * @license MIT <http://www.opensource.org/licenses/mit-license.php>
+ * @license MIT
  */
 
 /**
  * Implementation of hook_install().
  */
 function smush_it_install() {
-  //add the column for sure
+  if (!db_table_exists('smush_it')) {
+    drupal_install_schema('smush_it');
+    variable_set('_smush_it_cron_count', 0);
+    variable_set('_smush_it_cron_active', 0);
+    variable_set('_smush_it_testing', 0);
+    variable_set('_smush_it_test_image', null);
+    drupal_set_message(t('Smush.it cron is not active, go to the smush.it settings to activate it. 
+      If you are doing development locally and the images are not accessible via a url to the outside world,
+      you will need to point the Test Image at a file accessible via a url to the outside world.'));
+  }
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function smush_it_uninstall() {
-  //drop the column? probably not...
+  // Remove tables.
+  drupal_uninstall_schema('smush_it');
+  variable_del('_smush_it_cron_count');
+  variable_del('_smush_it_cron_active');
+  variable_del('_smush_it_testing');
+  variable_del('_smush_it_test_image');
+}
+
+
+/**
+ * Implementation of hook_schema().
+ */
+function smush_it_schema() {
+  $schema['smush_it'] = array(
+    'description' => 'Has an image been smushed? (used by the cron job)',
+    'fields' => array(
+      'smushid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Primary Key: The {smushid}.smushid.',
+      ),
+      'fid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The {files}.fid associated with the smushed file.',
+      ),
+      'space_saved' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Number of bytes saved by smushing the file.',
+      ),
+    ),
+    'primary key' => array('smushid'),
+    'indexes' => array(
+      'fid'=> array('fid')
+    ),
+  );
+  
+  return $schema;
 }

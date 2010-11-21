@@ -1,19 +1,20 @@
 <?php
 
 /**
- * The useragent string that will be passed to smush.it
- * @var string
- */
-define('SMUSH_IT_USER_AGENT', 'Smush.it Drupal Module ' . $base_url);
-
-/**
  * Description: Compresses images using Smush.it
  *
  * @license MIT
  * @author Mathew Davies <thepixeldeveloper@googlemail.com>
  * @author SeanJA  http://seanja.com
  */
-class smushit {
+
+/**
+ * The useragent string that will be passed to smush.it
+ * @var string
+ */
+define('SMUSH_IT_USER_AGENT', 'Smush.it Drupal Module ' . $base_url);
+
+class SmushIt {
 
   /**
    *
@@ -27,7 +28,7 @@ class smushit {
   /**
    * @hax php 4 fix
    */
-  public function smushit() {
+  public function SmushIt() {
     $this->__construct();
   }
 

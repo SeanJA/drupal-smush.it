@@ -2,7 +2,7 @@
 
 /**
  * @Author SeanJA <http://seanja.com>
- * @license MIT <http://www.opensource.org/licenses/mit-license.php>
+ * @license MIT
  */
 module_load_include('inc', 'smush_it', 'smush_it.class');
 
@@ -10,7 +10,8 @@ module_load_include('inc', 'smush_it', 'smush_it.class');
  * Get the document root for the current Drupal installation.
  * $_SERVER['DOCUMENT_ROOT'] is not reliable across all
  * systems, so we need a way to get the correct value.
- * @return (string)
+ * @staticvar string $root The value that will be returned
+ * @return string
  */
 function _document_root() {
   static $root;
@@ -25,29 +26,56 @@ function _document_root() {
 /**
  * Push an image through the smush.it api
  * @global string $base_url
- * @global string $base_path
- * @staticvar Smushit $s
- * @param file $file
- * @param node $node
+ * @staticvar SmushIt $s The smush.it object
+ * @staticvar bool $smush_it_testing Whether or not we are in test mode
+ * @staticvar string $smush_it_test_image The image that will be used in test mode
+ * @param file $file The file being processed
  */
-function _smush_image(&$file, &$node) {
-  global $base_url, $base_path;
-  static $s;
+function _smush_image(&$file) {
+  global $base_url;
+  static $s, $smush_it_testing, $smush_it_test_image;
   if (!$s) {
-    $s = new Smushit();
+    $s = new SmushIt();
+    $smush_it_testing = variable_get('_smush_it_testing', 0);
+    $smush_it_test_image = variable_get('_smush_it_test_image', null);
   }
   $filepath = $file['filepath'];
-  $file_url = $base_url . $filepath;
-  //$file_url = 'http://thechronicleherald.ca/images/specialfeatures/tis-the-season_part1.png';
+  
+  if(!$smush_it_testing){
+    //use the actual file
+    $file_url = $base_url . $filepath;
+  } else {
+    //use a web accessible file set in the settings section
+    $file_url = $smush_it_test_image;
+  }
   try {
     $smushed = $s->compress($file_url);
-    $file = _save_smush_file($file, $smushed, $node);
-    //@todo: this doesn't seem to work the way I expected it to
-    $file_object = (object)$file;
+    $file = _save_smush_file($file, $smushed);
+    //update the mimetype just incase something actually uses it
+    list($width, $height, $type, $attr) = getimagesize($smushed->dest);
+    $file['filemime'] = image_type_to_mime_type($type);
+    
+    //drupal_write_record expects an object, not an array
+    $file_object = (object) $file;
     drupal_write_record('files', $file_object, array('fid'));
+    //store the smushed info in the database as well so the image isn't processed over and over again
+    $smush_it_object = (object) array(
+      'fid' => $file['fid'],
+      'space_saved' => $smushed->src_size - $smushed->dest_size
+    );
+    drupal_write_record('smush_it', $smush_it_object);
+    
   } catch (Smush_exception $e) {
-    //no savings means that the file is as small as it can be (not really an error)
-    if ($e->getMessage() != 'No savings') {
+    //no savings means that the file is as small as it can be (not really an error, but returned as one by the api)
+    if ($e->getMessage() == 'No savings') {
+      //store the smushed info in the database as well so the image isn't processed over and over again
+      $smush_it_object = (object) array(
+        'fid' => $file['fid'],
+        'space_saved' => 0
+      );
+      drupal_write_record('smush_it', $smush_it_object);
+    } else {
+      //An actual error! Send it to the user
       drupal_set_message($e->getMessage(), 'error');
     }
   }
@@ -57,10 +85,9 @@ function _smush_image(&$file, &$node) {
  * Save the smushed file
  * @param file $file
  * @param smushed $smushed
- * @param node $node
  * @return file $file
  */
-function _save_smush_file($file, &$smushed, &$node) {
+function _save_smush_file($file, &$smushed) {
   //@TODO: there has to be a better way to do this part...
   $root_path = _document_root() . '/';
   $remote = fopen($smushed->dest, "rb");
@@ -98,7 +125,7 @@ function smush_it_nodeapi(&$node, $op, $teaser) {
       if (user_access('upload files')) {
         foreach ($node->files as &$file) {
           if ($file['new'] && in_array($file['filemime'], $image_mimes)) {
-            _smush_image($file, $node);
+            _smush_image($file);
           }
         }
       }
@@ -107,9 +134,128 @@ function smush_it_nodeapi(&$node, $op, $teaser) {
 }
 
 /**
+ * Gets the information from the smush.it settings to run the cron job
+ * if cron_count == 0 or cron_active == false then the cron job will not run
  * implementation of hook_cron()
- * @TODO: Implement a cron job, would require install and admin options
  */
 function smush_it_cron() {
+  $cron_active = variable_get('_smush_it_cron_active', false);
+  $cron_count = variable_get('_smush_it_cron_count', 0);
+  if ($cron_active && $cron_count > 0) {
+    _process_cron($cron_count);
+  }
+}
 
+/**
+ * Actually run the unprocessed images through smush.it
+ * @param int $cron_count
+ */
+function _process_cron($cron_count) {
+  $to_process = db_query('SELECT files.* FROM {files} 
+    LEFT JOIN {smush_it} ON files.fid = smush_it.fid 
+    WHERE smush_it.fid IS NULL 
+    AND filemime IN (\'image/jpeg\', \'image/png\', \'image/gif\') 
+    LIMIT 0 , %d', $cron_count);
+  while ($image = db_fetch_array($to_process)) {
+    _smush_image($image);
+  }
+}
+
+/**
+ * Add the smush.it settings menu item
+ * implementation of hook_menu()
+ * @return array 
+ */
+function smush_it_menu() {
+  $items['admin/settings/smush-it'] = array(
+    'title' => 'Smush.it',
+    'description' => t('The settings for smush.it'),
+    'page callback' => 'drupal_get_form', // assuming that you want to use a form
+    'page arguments' => array('_smush_it_form_builder'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer upload'), // or use hook_perm() to make your own
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * The smush.it admin settings form
+ * @return array 
+ */
+function _smush_it_form_builder() {
+  //in this example i'm creating a checkbox for each existing content type
+  $types = node_get_types('types');
+  $form['cron_count'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number of images processed during cron'),
+    '#description' => t('If your cron jobs are running too long, make this a smaller number.'),
+    '#default_value' => variable_get('_smush_it_cron_count', 10)
+  );
+
+  $form['cron_active'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Process images during cron'),
+    '#description' => t('If you don\'t want smush.it to run when the cron job fires, leave this un-checked.'),
+    '#default_value' => variable_get('_smush_it_cron_active', false)
+  );
+  
+  $form['test_mode'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Testing Mode'),
+    '#description' => t('If you want to test things locally.'),
+    '#default_value' => variable_get('_smush_it_testing', false)
+  );
+  
+  $form['test_image'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Testing Image'),
+    '#description' => t('The url to an image that you want to test with. Be nice, don\'t eat somone elses bandwidth up. !!Note: Your local images will be replaced by this one.!!'),
+    '#default_value' => variable_get('_smush_it_test_image', '')
+  );
+
+  $form['save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#executes_submit_callback' => true
+  );
+
+  $form['#submit'] = array(
+    '_smush_it_form_submit'
+  );
+
+  return $form;
+}
+
+/**
+ * Save the submitted values
+ * @param type $form
+ * @param type $form_state 
+ */
+function _smush_it_form_submit($form, &$form_state) {
+  if ($form['cron_active']['#value']) {
+    variable_set('_smush_it_cron_active', true);
+  } else {
+    variable_set('_smush_it_cron_active', false);
+  }
+  $cron_count_value = (int)$form['cron_count']['#value'];
+  if ($cron_count_value && $cron_count_value >= 0) {
+    variable_set('_smush_it_cron_count', (int)$cron_count_value);
+  } elseif ($cron_count_value && $cron_count_value < 0) {
+    form_set_error('', t('Cron count should be an integer >= 0.'));
+  }
+  
+  if($form['test_mode']['#value']){
+    variable_set('_smush_it_testing', true);
+  } else {
+    variable_set('_smush_it_testing', false);
+  }
+  
+  if($form['test_image']['#value']){
+    variable_set('_smush_it_test_image', $form['test_image']['#value']);
+  } else {
+    variable_set('_smush_it_testing', '');
+  }
+  
+  drupal_set_message('Smush.it settings updated', 'status');
 }

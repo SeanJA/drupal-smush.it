@@ -2,8 +2,8 @@
 
 /**
  * @Author SeanJA <http://seanja.com>
- * @license MIT <http://www.opensource.org/licenses/mit-license.php>
- * Just a dummy class so you know what you get back from the smushit compress function
+ * @license MIT
+ * Just a dummy class so you know what you get back from the smush.it compress function
  */
 abstract class smushed {
 

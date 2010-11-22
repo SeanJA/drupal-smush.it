@@ -46,3 +46,4 @@ TODO
 ==
 * Make smush on create / update optional (it could timeout for a large number of images)
 * Allow usage without json extension (check for `json_encode` / `json_decode` instead)
+* Option to smush individual images one by one

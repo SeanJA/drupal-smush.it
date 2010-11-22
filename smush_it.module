@@ -119,17 +119,20 @@ function smush_it_nodeapi(&$node, $op, $teaser) {
   if (!$image_mimes) {
     $image_mimes = array('image/jpeg', 'image/png', 'image/gif');
   }
-  switch ($op) {
-    case 'insert':
-    case 'update':
-      if (user_access('upload files')) {
-        foreach ($node->files as &$file) {
-          if ($file['new'] && in_array($file['filemime'], $image_mimes)) {
-            _smush_image($file);
+  $smush_on_create_update = variable_get('_smush_it_on_create_update', false);
+  if($smush_on_create_update){
+    switch ($op) {
+      case 'insert':
+      case 'update':
+        if (user_access('upload files')) {
+          foreach ($node->files as &$file) {
+            if ($file['new'] && in_array($file['filemime'], $image_mimes)) {
+              _smush_image($file);
+            }
           }
         }
-      }
-      break;
+        break;
+    }
   }
 }
 
@@ -199,6 +202,13 @@ function _smush_it_form_builder() {
     '#description' => t('If you don\'t want smush.it to run when the cron job fires, leave this un-checked.'),
     '#default_value' => variable_get('_smush_it_cron_active', false)
   );
+
+  $form['on_create_update'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Smush files on create/update'),
+    '#description' => t('If you want the cron job to handle smushing of images, check this off to ignore the create / update node action.'),
+    '#default_value' => variable_get('_smush_it_on_create_update', false)
+  );
   
   $form['test_mode'] = array(
     '#type' => 'checkbox',
@@ -244,11 +254,17 @@ function _smush_it_form_submit($form, &$form_state) {
   } elseif ($cron_count_value && $cron_count_value < 0) {
     form_set_error('', t('Cron count should be an integer >= 0.'));
   }
-  
+
   if($form['test_mode']['#value']){
     variable_set('_smush_it_testing', true);
   } else {
     variable_set('_smush_it_testing', false);
+  }
+  
+  if($form['on_create_update']['#value']){
+    variable_set('_smush_it_on_create_update', true);
+  } else {
+    variable_set('_smush_it_on_create_update', false);
   }
   
   if($form['test_image']['#value']){

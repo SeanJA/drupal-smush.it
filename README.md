@@ -18,9 +18,12 @@ Features
 ==
 
 * Will run on node create / update when new images are found
-* Can run on cron
+* Can run on cron (default: off)
   * You can set the number of images to be processed
-  * This can also be disabled
+* Can run on insert/update of a node (default: on)
+  * If your insert/updates are timing out (or you plan on adding a pile of images to nodes) you will want to disable this
+    * _Note_: if you disable this, you should enable the cron job
+
 * Can run in testing mode for local development
   * When on, you point it at a web accessible file
   * This file will replace your files (the files will still be around in the `.old` form)
@@ -44,5 +47,4 @@ Notes
 
 TODO
 ==
-* Make smush on create / update optional (it could timeout for a large number of images)
 * Option to smush individual images one by one

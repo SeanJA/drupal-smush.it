@@ -15,6 +15,7 @@ function smush_it_install() {
     variable_set('_smush_it_cron_active', 0);
     variable_set('_smush_it_testing', 0);
     variable_set('_smush_it_test_image', null);
+    variable_set('_smush_it_on_create_update', true);
     drupal_set_message(t('Smush.it cron is not active, go to the smush.it settings to activate it. 
       If you are doing development locally and the images are not accessible via a url to the outside world,
       you will need to point the Test Image at a file accessible via a url to the outside world.'));

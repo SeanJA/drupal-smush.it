@@ -21,6 +21,9 @@ Features
 * Can run on cron
   * You can set the number of images to be processed
   * This can also be disabled
+* Can run in testing mode for local development
+  * When on, you point it at a web accessible file
+  * This file will replace your files (the files will still be around in the `.old` form)
 
 Usage
 ==

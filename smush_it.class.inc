@@ -30,8 +30,8 @@ class SmushIt {
    * Make sure any prerequisite are installed.
    */
   public function __construct() {
-    if (!extension_loaded('json')) {
-      throw new RuntimeException('The json extension was not found');
+    if (!function_exists('json_decode')) {
+      throw new RuntimeException('The json_decode function was not found');
     }
     if (!extension_loaded('curl')) {
       throw new RuntimeException('The cURL extension was not found.');

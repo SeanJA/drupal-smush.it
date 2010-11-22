@@ -3,7 +3,7 @@ Dependencies
 
 * Drupal 6.x
 * Upload module
-* json extension
+* json functions
 * curl extension
 * PHP 5
 
@@ -28,7 +28,7 @@ Features
 Usage
 ==
 
-* This module should copy your original image to a .old file.
+* This module will copy your original image to a .old file.
 * Then it asks smush.it if there is a smaller version of the file available
 * Then it pulls down the smushed file if there is one
 * It will then record the difference in size in the `smush_it` table
@@ -45,5 +45,4 @@ Notes
 TODO
 ==
 * Make smush on create / update optional (it could timeout for a large number of images)
-* Allow usage without json extension (check for `json_encode` / `json_decode` instead)
 * Option to smush individual images one by one

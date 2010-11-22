@@ -25,12 +25,6 @@ class SmushIt {
    * Smush.it request URL
    */
   const url = 'http://www.smushit.com/ysmush.it/ws.php';
-  /**
-   * @hax php 4 fix
-   */
-  public function SmushIt() {
-    $this->__construct();
-  }
 
   /**
    * Make sure any prerequisite are installed.

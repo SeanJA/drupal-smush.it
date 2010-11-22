@@ -190,7 +190,6 @@ function smush_it_menu() {
  */
 function _smush_it_form_builder() {
   //in this example i'm creating a checkbox for each existing content type
-  $types = node_get_types('types');
   $form['cron_count'] = array(
     '#type' => 'textfield',
     '#title' => t('Number of images processed during cron'),

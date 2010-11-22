@@ -48,3 +48,5 @@ Notes
 TODO
 ==
 * Option to smush individual images one by one
+* .old file cleanup
+* replace with .old file

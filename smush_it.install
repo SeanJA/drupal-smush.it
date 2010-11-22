@@ -32,6 +32,7 @@ function smush_it_uninstall() {
   variable_del('_smush_it_cron_active');
   variable_del('_smush_it_testing');
   variable_del('_smush_it_test_image');
+  variable_del('_smush_it_on_create_update');
 }
 
 

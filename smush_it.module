@@ -175,13 +175,33 @@ function smush_it_menu() {
   $items['admin/settings/smush-it'] = array(
     'title' => 'Smush.it',
     'description' => t('The settings for smush.it'),
-    'page callback' => 'drupal_get_form', // assuming that you want to use a form
+    'page callback' => 'drupal_get_form',
     'page arguments' => array('_smush_it_form_builder'),
     'access callback' => 'user_access',
-    'access arguments' => array('administer upload'), // or use hook_perm() to make your own
+    'access arguments' => array('administer upload'),
     'type' => MENU_NORMAL_ITEM,
   );
+  $items['admin/settings/smush-it/settings'] = array(
+    'title' => 'Smush.it',
+    'description' => t('The settings for smush.it'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_smush_it_form_builder'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer upload'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/settings/smush-it/stats'] = array(
+    'title'=>'Stats',
+    'access callback'=>'user_access',
+    'page callback'=>'_smush_it_stats',
+    'access arguments' => array('administer upload'),
+    'type'=>MENU_LOCAL_TASK,
+  );
   return $items;
+}
+
+function _smush_it_stats(){
+  //TODO: create stats page
 }
 
 /**

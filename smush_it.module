@@ -201,8 +201,16 @@ function smush_it_menu() {
 }
 
 function _smush_it_stats(){
-  //TODO: create stats page
-  return t('stats page');
+  $q = 'SELECT files.*, smush_it.space_saved FROM {files}
+    LEFT JOIN {smush_it} ON files.fid = smush_it.fid
+    WHERE smush_it.fid IS NULL
+    AND filemime IN (\'image/jpeg\', \'image/png\', \'image/gif\')';
+  $result = pager_query($q, 20);
+
+  while($row = db_fetch_array($result)){
+    $output .= (implode(' | ',$row)) . '<br />';
+  }
+  return $output;
 }
 
 /**

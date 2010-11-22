@@ -202,6 +202,7 @@ function smush_it_menu() {
 
 function _smush_it_stats(){
   //TODO: create stats page
+  return t('stats page');
 }
 
 /**

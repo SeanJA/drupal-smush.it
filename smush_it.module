@@ -296,7 +296,7 @@ function smush_it_byte_format($bytes, $unit = "", $decimals = 2) {
     // Generate automatic prefix by bytes
     // If wrong prefix given
     if (!array_key_exists($unit, $units)) {
-      $pow = floor(log($bytes) / log(1024));
+      $pow = floor(bcdiv(log($bytes),log(1024)));
       $unit = array_search($pow, $units);
     }
 

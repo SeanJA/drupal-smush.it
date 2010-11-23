@@ -6,6 +6,7 @@ Dependencies
 * json functions
 * curl extension
 * PHP 5 (for exceptions and __construct niceties)
+* bc_math functions for the stats page (everything is stored as bytes which could be a really big number when summed)
 
 Install
 ==
@@ -29,6 +30,23 @@ Features
   * This file will replace your files (the files will still be around in the `.old` form)
 
 * Can smush individual images from the `Files` tab
+
+* Added stats page
+  * Contains:
+    * Original Image Size:
+      * Original image size before being smushed
+    * Bytes Saved:
+      * Total bytes saved by smush.it (goes up to YB)
+    * Smushed Size:
+      * Total image size after being smushed (goes up to YB)
+    * Images Smushed:
+      * Total images processed by smush.it
+    * Average Bytes Saved:
+      * Average number of bytes saved per image (goes up to YB)
+    * Images:
+      * Images that have been uploaded
+    * Images To Process:
+      * Images left to be processed
 
 Usage
 ==

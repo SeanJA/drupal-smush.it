@@ -40,8 +40,8 @@ function _smush_image(&$file) {
     $smush_it_test_image = variable_get('_smush_it_test_image', null);
   }
   $filepath = $file['filepath'];
-  
-  if(!$smush_it_testing){
+
+  if (!$smush_it_testing) {
     //use the actual file
     $file_url = $base_url . DIRECTORY_SEPARATOR . $filepath;
   } else {
@@ -54,24 +54,23 @@ function _smush_image(&$file) {
     //update the mimetype just incase something actually uses it
     list($width, $height, $type, $attr) = getimagesize($smushed->dest);
     $file['filemime'] = image_type_to_mime_type($type);
-    
+
     //drupal_write_record expects an object, not an array
     $file_object = (object) $file;
     drupal_write_record('files', $file_object, array('fid'));
     //store the smushed info in the database as well so the image isn't processed over and over again
     $smush_it_object = (object) array(
-      'fid' => $file['fid'],
-      'space_saved' => $smushed->src_size - $smushed->dest_size
+        'fid' => $file['fid'],
+        'space_saved' => $smushed->src_size - $smushed->dest_size
     );
     drupal_write_record('smush_it', $smush_it_object);
-    
   } catch (Smush_exception $e) {
     //no savings means that the file is as small as it can be (not really an error, but returned as one by the api)
     if ($e->getMessage() == 'No savings') {
       //store the smushed info in the database as well so the image isn't processed over and over again
       $smush_it_object = (object) array(
-        'fid' => $file['fid'],
-        'space_saved' => 0
+          'fid' => $file['fid'],
+          'space_saved' => 0
       );
       drupal_write_record('smush_it', $smush_it_object);
     } else {
@@ -122,7 +121,7 @@ function smush_it_nodeapi(&$node, $op, $teaser) {
     $image_mimes = array('image/jpeg', 'image/png', 'image/gif');
   }
   $smush_on_create_update = variable_get('_smush_it_on_create_update', false);
-  if($smush_on_create_update){
+  if ($smush_on_create_update) {
     switch ($op) {
       case 'insert':
       case 'update':
@@ -191,25 +190,83 @@ function smush_it_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
   $items['admin/settings/smush-it/stats'] = array(
-    'title'=>'Stats',
-    'access callback'=>'user_access',
-    'page callback'=>'_smush_it_stats',
+    'title' => 'Stats',
+    'access callback' => 'user_access',
+    'page callback' => '_smush_it_stats',
     'access arguments' => array('administer upload'),
-    'type'=>MENU_LOCAL_TASK,
+    'type' => MENU_LOCAL_TASK,
   );
   return $items;
 }
 
-function _smush_it_stats(){
+/**
+ * Displays the aggregator administration page.
+ *
+ * @return
+ *   The page HTML.
+ */
+function _smush_it_stats() {
+
+  $header = array(
+    array(
+      'data' => t('Filename'),
+      'field' => 'files.filename',
+      'sort' => 'asc'
+    ),
+    t('Path'),
+    array(
+      'data' => t('Mime'),
+      'field' => 'files.filemime',
+    ),
+    array(
+      'data' => t('Size'),
+      'field' => 'files.filesize',
+    ),
+    array(
+      'data' => t('Saved'),
+      'field' => 'smush_it.space_saved',
+    ),
+    array('data' => t('Operations'), 'colspan' => '3')
+  );
+
   $q = 'SELECT files.*, smush_it.space_saved FROM {files}
     LEFT JOIN {smush_it} ON files.fid = smush_it.fid
-    WHERE smush_it.fid IS NULL
     AND filemime IN (\'image/jpeg\', \'image/png\', \'image/gif\')';
-  $result = pager_query($q, 20);
 
-  while($row = db_fetch_array($result)){
-    $output .= (implode(' | ',$row)) . '<br />';
+  $limit = 25;
+
+  $q .= tablesort_sql($header);
+
+  $result = pager_query($q, $limit);
+
+  $table_rows = array();
+  while ($file = db_fetch_object($result)) {
+    $row = array(
+      array('data' => l($file->filename, $file->filepath)),
+      array('data' => $file->filepath),
+      array('data' => $file->filemime),
+      array('data' => $file->filesize),
+      array('data' => $file->space_saved),
+    );
+//    if (empty($file->sid)) {
+//      $row[] = array('data' => l('smush', "admin/settings/smush_it/smush/$file->fid"));
+//    } else {
+      $row[] = array('data' => '');
+//    }
+    $table_rows[] = $row;
   }
+  $output = '<h3>' . t('Smushed File Overview') . '</h3>';
+
+  $tags = array(
+    'first',
+    '<prev',
+    '',
+    'next>',
+    'last',
+  );
+
+  $output .= theme('table', $header, $table_rows);
+  $output .= theme('pager', $tags, $limit);
   return $output;
 }
 
@@ -239,14 +296,14 @@ function _smush_it_form_builder() {
     '#description' => t('If you want the cron job to handle smushing of images, check this off to ignore the create / update node action.'),
     '#default_value' => variable_get('_smush_it_on_create_update', false)
   );
-  
+
   $form['test_mode'] = array(
     '#type' => 'checkbox',
     '#title' => t('Testing Mode'),
     '#description' => t('If you want to test things locally.'),
     '#default_value' => variable_get('_smush_it_testing', false)
   );
-  
+
   $form['test_image'] = array(
     '#type' => 'textfield',
     '#title' => t('Testing Image'),
@@ -278,30 +335,30 @@ function _smush_it_form_submit($form, &$form_state) {
   } else {
     variable_set('_smush_it_cron_active', false);
   }
-  $cron_count_value = (int)$form['cron_count']['#value'];
+  $cron_count_value = (int) $form['cron_count']['#value'];
   if ($cron_count_value && $cron_count_value >= 0) {
-    variable_set('_smush_it_cron_count', (int)$cron_count_value);
+    variable_set('_smush_it_cron_count', (int) $cron_count_value);
   } elseif ($cron_count_value && $cron_count_value < 0) {
     form_set_error('', t('Cron count should be an integer >= 0.'));
   }
 
-  if($form['test_mode']['#value']){
+  if ($form['test_mode']['#value']) {
     variable_set('_smush_it_testing', true);
   } else {
     variable_set('_smush_it_testing', false);
   }
-  
-  if($form['on_create_update']['#value']){
+
+  if ($form['on_create_update']['#value']) {
     variable_set('_smush_it_on_create_update', true);
   } else {
     variable_set('_smush_it_on_create_update', false);
   }
-  
-  if($form['test_image']['#value']){
+
+  if ($form['test_image']['#value']) {
     variable_set('_smush_it_test_image', $form['test_image']['#value']);
   } else {
     variable_set('_smush_it_testing', '');
   }
-  
+
   drupal_set_message('Smush.it settings updated', 'status');
 }

@@ -207,6 +207,16 @@ function smush_it_menu() {
     'weight'=>'0',
   );
   
+  //file listing
+  $items['admin/settings/smush-it/stats'] = array(
+    'title' => 'Files',
+    'access callback' => 'user_access',
+    'page callback' => '_smush_it_stats',
+    'access arguments' => array('administer upload'),
+    'type' => MENU_LOCAL_TASK,
+    'weight'=>'10',
+  );
+  
   //smush an individual image
   $items['admin/settings/smush-it/smush/%'] = array(
     'page callback' => '_smush_it_manually',
@@ -215,8 +225,15 @@ function smush_it_menu() {
     'access arguments' => array('administer upload'),
     'type'=>MENU_CALLBACK,
   );
+  
+  
   return $items;
 }
+
+function _smush_it_stats(){
+  return t('stats page coming soon');
+}
+
 
 /**
  * Smush a file manually

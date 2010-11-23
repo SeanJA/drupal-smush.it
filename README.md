@@ -51,3 +51,4 @@ TODO
 ==
 * .old file cleanup
 * replace with .old file
+* Add stats page

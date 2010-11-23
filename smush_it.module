@@ -49,6 +49,11 @@ function _smush_image(&$file) {
     $file_url = $smush_it_test_image;
   }
   try {
+    $q = db_query('SELECT smushid FROM {smush_it} WHERE fid = %d', $file['fid']);
+    $exists = db_fetch_array($q);
+    if(!empty($exists['smushid'])){
+      throw new Smush_exception('The file has already been smushed', null);
+    }
     $smushed = $s->compress($file_url);
     $file = _save_smush_file($file, $smushed);
     //update the mimetype just incase something actually uses it
@@ -75,9 +80,11 @@ function _smush_image(&$file) {
       drupal_write_record('smush_it', $smush_it_object);
     } else {
       //An actual error! Send it to the user
-      drupal_set_message($e->getMessage() . ': ' . $file_url, 'error');
+      drupal_set_message($e->getMessage() . ' => ' . $file['filename'], 'error');
+      return false;
     }
   }
+  return true;
 }
 
 /**
@@ -155,6 +162,7 @@ function smush_it_cron() {
  * @param int $cron_count
  */
 function _process_cron($cron_count) {
+  //select the files where there is no equivalent smush_it entry
   $to_process = db_query('SELECT files.* FROM {files} 
     LEFT JOIN {smush_it} ON files.fid = smush_it.fid 
     WHERE smush_it.fid IS NULL 
@@ -171,6 +179,7 @@ function _process_cron($cron_count) {
  * @return array 
  */
 function smush_it_menu() {
+  //smush it settings
   $items['admin/settings/smush-it'] = array(
     'title' => 'Smush.it',
     'description' => t('The settings for smush.it'),
@@ -180,32 +189,53 @@ function smush_it_menu() {
     'access arguments' => array('administer upload'),
     'type' => MENU_NORMAL_ITEM,
   );
-  $items['admin/settings/smush-it/settings'] = array(
-    'title' => 'Smush.it',
-    'description' => t('The settings for smush.it'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('_smush_it_form_builder'),
+  
+  //this seems redundant
+  $items['admin/settings/smush-it/settings'] = $items['admin/settings/smush-it'];
+  //replace values that are different for this menu item (it is a tab)
+  $items['admin/settings/smush-it/settings']['type'] = MENU_DEFAULT_LOCAL_TASK;
+  $items['admin/settings/smush-it/settings']['weight'] = -10;
+  $items['admin/settings/smush-it/settings']['title'] = 'Settings';
+  
+  //file listing
+  $items['admin/settings/smush-it/files'] = array(
+    'title' => 'Files',
     'access callback' => 'user_access',
-    'access arguments' => array('administer upload'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-  );
-  $items['admin/settings/smush-it/stats'] = array(
-    'title' => 'Stats',
-    'access callback' => 'user_access',
-    'page callback' => '_smush_it_stats',
+    'page callback' => '_smush_it_files',
     'access arguments' => array('administer upload'),
     'type' => MENU_LOCAL_TASK,
+    'weight'=>'0',
+  );
+  
+  //smush an individual image
+  $items['admin/settings/smush-it/smush/%'] = array(
+    'page callback' => '_smush_it_manually',
+    'page arguments' => array(4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer upload'),
+    'type'=>MENU_CALLBACK,
   );
   return $items;
 }
 
 /**
- * Displays the aggregator administration page.
- *
- * @return
- *   The page HTML.
+ * Smush a file manually
+ * @param int $file_id 
  */
-function _smush_it_stats() {
+function _smush_it_manually($file_id){
+  $result = db_query('SELECT * FROM {files} WHERE fid = %d', $file_id);
+  $file = db_fetch_array($result);
+  if(_smush_image($file)){
+    drupal_set_message($file['filename'] . ' has been smushed.');
+  }
+  drupal_goto('admin/settings/smush-it/files');
+}
+
+/**
+ * Displays the images you have uploaded, lets you smush them one by one if you want to
+ * @return type 
+ */
+function _smush_it_files() {
 
   $header = array(
     array(
@@ -248,11 +278,12 @@ function _smush_it_stats() {
       array('data' => $file->filesize),
       array('data' => $file->space_saved),
     );
-//    if (empty($file->sid)) {
-//      $row[] = array('data' => l('smush', "admin/settings/smush_it/smush/$file->fid"));
-//    } else {
+    //if the file has not been smushed, this will not be set, so show them a link to smush the file
+    if (empty($file->sid)) {
+      $row[] = array('data' => l('smush', "admin/settings/smush-it/smush/$file->fid"));
+    } else {
       $row[] = array('data' => '');
-//    }
+    }
     $table_rows[] = $row;
   }
   $output = '<h3>' . t('Smushed File Overview') . '</h3>';

@@ -177,13 +177,17 @@ function smush_it_stats_page() {
  * Smush a file manually, then redirect to the files page
  * @param int $file_id 
  */
-function smush_it_manually($file_id) {
+function smush_it_manually($file_id, $redirect = true) {
   $result = db_query('SELECT * FROM {files} WHERE fid = %d', $file_id);
   $file = db_fetch_array($result);
   if (smush_it::smush_image($file)) {
     drupal_set_message($file['filename'] . ' has been smushed.');
   }
-  drupal_goto('admin/settings/smush-it/files');
+  if($redirect){
+    //@BUG: should go back to previous page the user was on
+    //   ie: admin/settings/smush-it/files?page=10
+    drupal_goto('admin/settings/smush-it/files');
+  }
 }
 
 /**

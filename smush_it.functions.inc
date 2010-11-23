@@ -1,5 +1,9 @@
 <?php
 
+if(!extension_loaded('bcmath')){
+  throw new RuntimeException('bcmath extension not found');
+}
+
 class smush_it {
 
   /**
@@ -52,6 +56,7 @@ class smush_it {
   static function document_root() {
     static $root;
     if (!$root) {
+      //@BUG: there has to be a better way to do this part...
       $absolute_dir = dirname(__FILE__);
       $relative_dir = drupal_get_path('module', 'smush_it');
       $root = substr($absolute_dir, 0, -1 * (1 + strlen($relative_dir)));
@@ -163,7 +168,6 @@ class smush_it {
    * @return file $file
    */
   static function _save_file($file, &$smushed) {
-    //@TODO: there has to be a better way to do this part...
     $root_path = smush_it::document_root() . '/';
     $remote = fopen($smushed->dest, "rb");
     $new_file = $root_path . $file['filepath'] . '.new';

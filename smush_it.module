@@ -209,7 +209,7 @@ function smush_it_menu() {
   
   //file listing
   $items['admin/settings/smush-it/stats'] = array(
-    'title' => 'Files',
+    'title' => 'Stats',
     'access callback' => 'user_access',
     'page callback' => '_smush_it_stats',
     'access arguments' => array('administer upload'),

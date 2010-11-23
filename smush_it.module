@@ -259,7 +259,7 @@ function _smush_it_files() {
     array('data' => t('Operations'), 'colspan' => '3')
   );
 
-  $q = 'SELECT files.*, smush_it.space_saved FROM {files}
+  $q = 'SELECT files.*, smush_it.space_saved, smush_it.smushid FROM {files}
     LEFT JOIN {smush_it} ON files.fid = smush_it.fid
     AND filemime IN (\'image/jpeg\', \'image/png\', \'image/gif\')';
 
@@ -279,7 +279,7 @@ function _smush_it_files() {
       array('data' => $file->space_saved),
     );
     //if the file has not been smushed, this will not be set, so show them a link to smush the file
-    if (empty($file->sid)) {
+    if (empty($file->smushid)) {
       $row[] = array('data' => l('smush', "admin/settings/smush-it/smush/$file->fid"));
     } else {
       $row[] = array('data' => '');

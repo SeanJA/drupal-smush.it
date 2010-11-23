@@ -51,7 +51,7 @@ function _smush_image(&$file) {
   try {
     $q = db_query('SELECT smushid FROM {smush_it} WHERE fid = %d', $file['fid']);
     $exists = db_fetch_array($q);
-    if(!empty($exists['smushid'])){
+    if (!empty($exists['smushid'])) {
       throw new Smush_exception('The file has already been smushed', null);
     }
     $smushed = $s->compress($file_url);
@@ -189,14 +189,14 @@ function smush_it_menu() {
     'access arguments' => array('administer upload'),
     'type' => MENU_NORMAL_ITEM,
   );
-  
+
   //this seems redundant
   $items['admin/settings/smush-it/settings'] = $items['admin/settings/smush-it'];
   //replace values that are different for this menu item (it is a tab)
   $items['admin/settings/smush-it/settings']['type'] = MENU_DEFAULT_LOCAL_TASK;
   $items['admin/settings/smush-it/settings']['weight'] = -10;
   $items['admin/settings/smush-it/settings']['title'] = 'Settings';
-  
+
   //file listing
   $items['admin/settings/smush-it/files'] = array(
     'title' => 'Files',
@@ -204,9 +204,9 @@ function smush_it_menu() {
     'page callback' => '_smush_it_files',
     'access arguments' => array('administer upload'),
     'type' => MENU_LOCAL_TASK,
-    'weight'=>'0',
+    'weight' => '0',
   );
-  
+
   //file listing
   $items['admin/settings/smush-it/stats'] = array(
     'title' => 'Stats',
@@ -214,35 +214,34 @@ function smush_it_menu() {
     'page callback' => '_smush_it_stats',
     'access arguments' => array('administer upload'),
     'type' => MENU_LOCAL_TASK,
-    'weight'=>'10',
+    'weight' => '10',
   );
-  
+
   //smush an individual image
   $items['admin/settings/smush-it/smush/%'] = array(
     'page callback' => '_smush_it_manually',
     'page arguments' => array(4),
     'access callback' => 'user_access',
     'access arguments' => array('administer upload'),
-    'type'=>MENU_CALLBACK,
+    'type' => MENU_CALLBACK,
   );
-  
-  
+
+
   return $items;
 }
 
-function _smush_it_stats(){
+function _smush_it_stats() {
   return t('stats page coming soon');
 }
-
 
 /**
  * Smush a file manually
  * @param int $file_id 
  */
-function _smush_it_manually($file_id){
+function _smush_it_manually($file_id) {
   $result = db_query('SELECT * FROM {files} WHERE fid = %d', $file_id);
   $file = db_fetch_array($result);
-  if(_smush_image($file)){
+  if (_smush_image($file)) {
     drupal_set_message($file['filename'] . ' has been smushed.');
   }
   drupal_goto('admin/settings/smush-it/files');

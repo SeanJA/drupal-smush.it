@@ -369,7 +369,6 @@ function _smush_it_files() {
       'field' => 'files.filename',
       'sort' => 'asc'
     ),
-    t('Path'),
     array(
       'data' => t('Mime'),
       'field' => 'files.filemime',
@@ -402,7 +401,6 @@ function _smush_it_files() {
   while ($file = db_fetch_object($result)) {
     $row = array(
       array('data' => l($file->filename, $file->filepath)),
-      array('data' => $file->filepath),
       array('data' => $file->filemime),
       array('data' => smush_it_byte_format($file->filesize + $file->space_saved)),
       array('data' => smush_it_byte_format($file->filesize)),

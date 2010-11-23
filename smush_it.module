@@ -278,6 +278,13 @@ function _smush_it_stats() {
   return $output;
 }
 
+/**
+ * Format a number of bytes nicely for output (B, KB, MB, GB, TB...)
+ * @param int $bytes
+ * @param string $unit
+ * @param int $decimals
+ * @return string
+ */
 function smush_it_byte_format($bytes, $unit = "", $decimals = 2) {
 	$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4, 'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
   
@@ -368,7 +375,10 @@ function _smush_it_files() {
       'field' => 'files.filemime',
     ),
     array(
-      'data' => t('Size'),
+      'data' => t('Orignal'),
+    ),
+    array(
+      'data' => t('Smushed'),
       'field' => 'files.filesize',
     ),
     array(
@@ -394,8 +404,9 @@ function _smush_it_files() {
       array('data' => l($file->filename, $file->filepath)),
       array('data' => $file->filepath),
       array('data' => $file->filemime),
-      array('data' => $file->filesize),
-      array('data' => $file->space_saved),
+      array('data' => smush_it_byte_format($file->filesize + $file->space_saved)),
+      array('data' => smush_it_byte_format($file->filesize)),
+      array('data' => smush_it_byte_format($file->space_saved)),
     );
     //if the file has not been smushed, this will not be set, so show them a link to smush the file
     if (empty($file->smushid)) {
@@ -405,7 +416,7 @@ function _smush_it_files() {
     }
     $table_rows[] = $row;
   }
-  $output = '<h3>' . t('Smushed File Overview') . '</h3>';
+  $output = '<h3>' . t('Files') . '</h3>';
 
   $tags = array(
     'first',

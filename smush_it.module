@@ -230,8 +230,111 @@ function smush_it_menu() {
   return $items;
 }
 
+/**
+ * The smush.it stats page
+ * @return string
+ */
 function _smush_it_stats() {
-  return t('stats page coming soon');
+  
+  $saved_bytes = _smush_it_total_saved();
+  $smushed_bytes = _smush_it_image_size();
+  $count_smushed = _smush_it_smushed_count();
+  $count_images = _smush_it_image_count();
+  
+  //these numbers could end up being extremely big...
+  $avg_bytes = sprintf('%.0f', bcdiv($saved_bytes, $count_smushed));
+  $original_bytes = sprintf('%.0f', bcadd($smushed_bytes, $saved_bytes));
+  $count_to_process = sprintf('%.0f', bcsub($count_images, $count_smushed));
+  
+  $rows[] = array(
+    '<h4>'.t('Original Image Size:').'</h4>',
+    smush_it_byte_format($original_bytes)
+  );
+  $rows[] = array(
+    '<h4>'.t('Bytes Saved:').'</h4>',
+    smush_it_byte_format($saved_bytes)
+  );
+  $rows[] = array(
+    '<h4>'.t('Smushed Size:').'</h4>',
+    smush_it_byte_format($smushed_bytes)
+  );
+  $rows[] = array(
+    '<h4>'.t('Images Smushed:').'</h4>',
+    $count_smushed
+  );
+  $rows[] = array(
+    '<h4>'.t('Average Bytes Saved:').'</h4>',
+    smush_it_byte_format($avg_bytes)
+  );
+  $rows[] = array(
+    '<h4>'.t('Images:').'</h4>',
+    $count_images
+  );
+  $rows[] = array(
+    '<h4>'.t('Images To Process:').'</h4>',
+    $count_to_process
+  );
+  $output = theme('table', null, $rows);
+  return $output;
+}
+
+function smush_it_byte_format($bytes, $unit = "", $decimals = 2) {
+	$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4, 'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
+  
+	$value = 0;
+	if ($bytes > 0) {
+		// Generate automatic prefix by bytes 
+		// If wrong prefix given
+		if (!array_key_exists($unit, $units)) {
+			$pow = floor(log($bytes)/log(1024));
+			$unit = array_search($pow, $units);
+		}
+ 
+		// Calculate byte value by prefix
+		$value = ($bytes/bcpow(1024,floor($units[$unit])));
+	}
+ 
+	// If decimals is not numeric or decimals is less than 0 
+	// then set default value
+	if (!is_numeric($decimals) || $decimals < 0) {
+		$decimals = 2;
+	}
+ 
+	// Format output
+	return sprintf('%.' . $decimals . 'f '.$unit, $value);
+  }
+
+
+/**
+ * Get the total space saved
+ * @return string
+ */
+function _smush_it_total_saved(){
+  $result = db_query('SELECT SUM(space_saved) as total FROM {smush_it};');
+  $result = db_fetch_array($result);
+  return $result['total'];
+}
+
+/**
+ * Count the total image size
+ * @return string
+ */
+function _smush_it_image_size(){
+  $result = db_query("SELECT SUM(filesize) as total FROM {files} WHERE filemime IN ('image/jpeg', 'image/png', 'image/gif');");
+  $result = db_fetch_array($result);
+  return $result['total'];
+}
+
+function _smush_it_smushed_count(){
+  $result = db_query("SELECT COUNT(*) as total FROM {smush_it};");
+  $result = db_fetch_array($result);
+  return $result['total'];
+}
+
+function _smush_it_image_count(){
+  $result = db_query("SELECT COUNT(*) as total FROM {files} WHERE filemime IN ('image/jpeg', 'image/png', 'image/gif');");
+  $result = db_fetch_array($result);
+  return $result['total'];
 }
 
 /**

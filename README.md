@@ -28,6 +28,8 @@ Features
   * When on, you point it at a web accessible file
   * This file will replace your files (the files will still be around in the `.old` form)
 
+* Can smush individual images from the `Files` tab
+
 Usage
 ==
 
@@ -41,7 +43,7 @@ Usage
 Notes
 ==
 
-* If the file is a gif, it could come back as a png
+* If the file is a gif, it could come back as a png (browsers generally don't care what kind of image it is)
   * If it does, the file will still be `/path/to/file.gif` but the mimetype in the file system will be changed to `image/png`
     * This means that files you have linked to on your site will not break
 

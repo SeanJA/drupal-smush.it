@@ -1,9 +1,5 @@
 <?php
 
-if(!extension_loaded('bcmath')){
-  throw new RuntimeException('bcmath extension not found');
-}
-
 class smush_it {
 
   /**
@@ -66,35 +62,13 @@ class smush_it {
 
   /**
    * Format a number of bytes nicely for output (B, KB, MB, GB, TB...)
-   * @param int $bytes
-   * @param string $unit
-   * @param int $decimals
+   * @param int $bytes Number of bytes
+   * @param string $unit units you want it back in (default is to choose the biggest one that fits)
+   * @param int $decimals number of decimal places
    * @return string
    */
   static function byte_format($bytes, $unit = "", $decimals = 2) {
-    $units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4, 'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
-
-    $value = 0;
-    if ($bytes > 0) {
-      // Generate automatic prefix by bytes
-      // If wrong prefix given
-      if (!array_key_exists($unit, $units)) {
-        $pow = floor(bcdiv(log($bytes), log(1024)));
-        $unit = array_search($pow, $units);
-      }
-
-      // Calculate byte value by prefix
-      $value = (bcdiv($bytes, bcpow(1024, floor($units[$unit]))));
-    }
-
-    // If decimals is not numeric or decimals is less than 0
-    // then set default value
-    if (!is_numeric($decimals) || $decimals < 0) {
-      $decimals = 2;
-    }
-
-    // Format output
-    return sprintf('%.' . $decimals . 'f ' . $unit, $value);
+    return _smush_it_byte_format($bytes, $unit, $decimals);
   }
 
   /**
@@ -139,8 +113,8 @@ class smush_it {
       drupal_write_record('files', $file_object, array('fid'));
       //store the smushed info in the database as well so the image isn't processed over and over again
       $smush_it_object = (object) array(
-                  'fid' => $file['fid'],
-                  'space_saved' => $smushed->src_size - $smushed->dest_size
+          'fid' => $file['fid'],
+          'space_saved' => $smushed->src_size - $smushed->dest_size
       );
       drupal_write_record('smush_it', $smush_it_object);
     } catch (Smush_exception $e) {
@@ -148,8 +122,8 @@ class smush_it {
       if ($e->getMessage() == 'No savings') {
         //store the smushed info in the database as well so the image isn't processed over and over again
         $smush_it_object = (object) array(
-                    'fid' => $file['fid'],
-                    'space_saved' => 0
+            'fid' => $file['fid'],
+            'space_saved' => 0
         );
         drupal_write_record('smush_it', $smush_it_object);
       } else {
@@ -188,4 +162,74 @@ class smush_it {
     return $file;
   }
 
+}
+
+if (BC_LOADED) {
+
+  /**
+   * Format a number of bytes nicely for output (B, KB, MB, GB, TB...)
+   * @param int $bytes Number of bytes
+   * @param string $unit units you want it back in (default is to choose the biggest one that fits)
+   * @param int $decimals number of decimal places
+   * @return string
+   */
+  function _smush_it_byte_format($bytes, $unit = "", $decimals = 2) {
+    $units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4, 'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
+
+    $value = 0;
+    if ($bytes > 0) {
+      // Generate automatic prefix by bytes
+      // If wrong prefix given
+      if (!array_key_exists($unit, $units)) {
+        $pow = floor(log($bytes) / log(1024));
+        $unit = array_search($pow, $units);
+      }
+
+      // Calculate byte value by prefix
+      $value = $bytes / pow(1024, floor($units[$unit]));
+    }
+
+    // If decimals is not numeric or decimals is less than 0
+    // then set default value
+    if (!is_numeric($decimals) || $decimals < 0) {
+      $decimals = 2;
+    }
+
+    // Format output
+    return sprintf('%.' . $decimals . 'f ' . $unit, $value);
+  }
+
+} else {
+  /**
+   * Format a number of bytes nicely for output (B, KB, MB, GB, TB...)
+   * @param int $bytes Number of bytes
+   * @param string $unit units you want it back in (default is to choose the biggest one that fits)
+   * @param int $decimals number of decimal places
+   * @return string
+   */
+  function _smush_it_byte_format($bytes, $unit = "", $decimals = 2) {
+    $units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4, 'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
+
+    $value = 0;
+    if ($bytes > 0) {
+      // Generate automatic prefix by bytes
+      // If wrong prefix given
+      if (!array_key_exists($unit, $units)) {
+        $pow = floor(bcdiv(log($bytes), log(1024)));
+        $unit = array_search($pow, $units);
+      }
+
+      // Calculate byte value by prefix
+      $value = (bcdiv($bytes, bcpow(1024, floor($units[$unit]))));
+    }
+
+    // If decimals is not numeric or decimals is less than 0
+    // then set default value
+    if (!is_numeric($decimals) || $decimals < 0) {
+      $decimals = 2;
+    }
+
+    // Format output
+    return sprintf('%.' . $decimals . 'f ' . $unit, $value);
+  }
 }

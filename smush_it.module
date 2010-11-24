@@ -31,7 +31,7 @@ function smush_it_nodeapi(&$node, $op, $teaser) {
         if (user_access('upload files')) {
           foreach ($node->files as &$file) {
             if ($file['new'] && in_array($file['filemime'], $image_mimes)) {
-              smush_it::smush_image($file);
+              smush_it::smush_image($file['fid']);
             }
           }
         }
@@ -59,13 +59,13 @@ function smush_it_cron() {
  */
 function _process_cron($cron_count) {
   //select the files where there is no equivalent smush_it entry
-  $to_process = db_query('SELECT files.* FROM {files} 
+  $to_process = db_query('SELECT files.fid FROM {files}
     LEFT JOIN {smush_it} ON files.fid = smush_it.fid 
     WHERE smush_it.smushid IS NULL
     AND filemime IN (\'image/jpeg\', \'image/png\', \'image/gif\') 
     LIMIT 0 , %d', $cron_count);
-  while ($image = db_fetch_array($to_process)) {
-    smush_it::smush_image($image);
+  while ($file = db_fetch_array($to_process)) {
+    smush_it::smush_image($file['fid']);
   }
 }
 
@@ -125,6 +125,23 @@ function smush_it_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  //revert an image
+  $items['admin/settings/smush-it/revert/%'] = array(
+    'page callback' => 'smush_it_revert',
+    'page arguments' => array(4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer upload'),
+    'type' => MENU_CALLBACK,
+  );
+
+  //ignore an image
+  $items['admin/settings/smush-it/ignore/%'] = array(
+    'page callback' => 'smush_it_ignore',
+    'page arguments' => array(4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer upload'),
+    'type' => MENU_CALLBACK,
+  );
 
   return $items;
 }
@@ -189,10 +206,38 @@ if (BC_LOADED) {
  * @param int $file_id 
  */
 function smush_it_manually($file_id, $redirect = true) {
-  $result = db_query('SELECT * FROM {files} WHERE fid = %d', $file_id);
-  $file = db_fetch_array($result);
-  if (smush_it::smush_image($file)) {
+  if (smush_it::smush_image($file_id)) {
     drupal_set_message($file['filename'] . ' has been smushed.');
+  }
+  if ($redirect) {
+    //@BUG: should go back to previous page the user was on
+    //   ie: admin/settings/smush-it/files?page=10
+    drupal_goto('admin/settings/smush-it/files');
+  }
+}
+
+/**
+ * Revert a file, then redirect to the files page
+ * @param int $file_id
+ */
+function smush_it_revert($file_id, $redirect = true) {
+  if (smush_it::revert_image($file_id)) {
+    drupal_set_message($file['filename'] . " has been reverted to it's original version.");
+  }
+  if ($redirect) {
+    //@BUG: should go back to previous page the user was on
+    //   ie: admin/settings/smush-it/files?page=10
+    drupal_goto('admin/settings/smush-it/files');
+  }
+}
+
+/**
+ * Revert a file, then redirect to the files page
+ * @param int $file_id
+ */
+function smush_it_ignore($file_id, $redirect = true) {
+  if (smush_it::ignore_image($file_id)) {
+    drupal_set_message($file['filename'] . ' will be ignored by cron jobs.');
   }
   if ($redirect) {
     //@BUG: should go back to previous page the user was on
@@ -258,9 +303,11 @@ function smush_it_file_listing() {
 
     //if the file has not been smushed, this will not be set, so show them a link to smush the file
     if (empty($file->smushid)) {
-      $row[] = array('data' => l('smush', "admin/settings/smush-it/smush/$file->fid"));
+      $row[] = array(
+        'data' => l('smush', "admin/settings/smush-it/smush/$file->fid") . ' | ' . l('ignore', "admin/settings/smush-it/ignore/$file->fid")
+      );
     } else {
-      $row[] = array('data' => '');
+      $row[] = array('data' => l('revert', "admin/settings/smush-it/revert/$file->fid"));
     }
     $table_rows[] = $row;
   }

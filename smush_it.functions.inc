@@ -1,6 +1,66 @@
 <?php
 
+/**
+ * Fake namespacing of the functions (allows for private functions to hide them from the global scope)
+ */
 class smush_it {
+
+  /**
+   * Load an image from it's file_id (fid)
+   * @param int $file_id
+   * @return array
+   */
+  private static function load_file($file_id){
+    $result = db_query('SELECT * FROM {files} WHERE fid = %d', $file_id);
+    $file = db_fetch_array($result);
+    return $file;
+  }
+
+  /**
+   * Set an image to be ignored by smush_it's cron job
+   * @param int $file_id
+   * @return boolean
+   */
+  static function ignore_image($file_id){
+    $file = self::load_file($file_id);
+    $smush_it = array(
+      'space_saved' => 0,
+      'fid' => $file['fid'],
+    );
+    $smush_it_object = (object) $smush_it;
+    drupal_write_record('smush_it', $smush_it_object);
+    return true;
+  }
+
+  /**
+   * Revert an image to it's unsmushed state
+   * @param int $file_id
+   * @return boolean
+   */
+  static function revert_image($file_id){
+    $file = self::load_file($file_id);
+    $root_path = self::document_root() . '/';
+    $filepath = $root_path . $file['filepath'];
+    //don't wipe out files that do not have backups
+    if(file_exists($filepath.'.old')){
+      unlink($filepath);
+      rename($filepath . '.old', $filepath);
+    }
+    list($width, $height, $type, $attr) = getimagesize($filepath);
+    $file['mimetype'] = image_type_to_mime_type($type);
+    $file['filesize'] = filesize($filepath);
+    
+    $smush_it = array(
+      'space_saved' => 0,
+      $smush_it['fid'] => $file['fid'],
+    );
+
+    $smush_it_object = (object) $smush_it;
+    $file_object = (object) $file;
+    db_query('DELETE FROM {smush_it} WHERE fid = %d', $file['fid']);
+    drupal_write_record('files', $file_object, 'fid');
+    return true;
+  }
 
   /**
    * Get the total space saved
@@ -79,7 +139,8 @@ class smush_it {
    * @staticvar string $smush_it_test_image The image that will be used in test mode
    * @param file $file The file being processed
    */
-  static function smush_image(&$file) {
+  static function smush_image($file_id) {
+    $file = self::load_file($file_id);
     global $base_url;
     static $s, $smush_it_testing, $smush_it_test_image;
     if (!$s) {
@@ -103,7 +164,7 @@ class smush_it {
         throw new Smush_exception('The file has already been smushed', null);
       }
       $smushed = $s->compress($file_url);
-      $file = smush_it::_save_file($file, $smushed);
+      $file = self::save_file($file, $smushed);
       //update the mimetype just incase something actually uses it
       list($width, $height, $type, $attr) = getimagesize($smushed->src);
       $file['filemime'] = image_type_to_mime_type($type);
@@ -141,7 +202,7 @@ class smush_it {
    * @param smushed $smushed
    * @return file $file
    */
-  static function _save_file($file, &$smushed) {
+  private static function save_file($file, &$smushed) {
     $root_path = smush_it::document_root() . '/';
     $remote = fopen($smushed->dest, "rb");
     $new_file = $root_path . $file['filepath'] . '.new';

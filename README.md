@@ -6,7 +6,7 @@ Dependencies
 * json functions
 * curl extension
 * PHP 5 (for exceptions and __construct niceties)
-* bc_math functions for the stats page (everything is stored as bytes which could be a really big number when summed)
+* bcmath functions for the stats page (everything is stored as bytes which could be a really big number when summed)
 
 Install
 ==
@@ -30,8 +30,10 @@ Features
   * This file will replace your files (the files will still be around in the `.old` form)
 
 * Can smush individual images from the `Files` tab
+* Can revert images from their smushed state (if the smushed file is messed up)
+* Can set files to be ignored by the smush_it cron job (so they don't get messed up again)
 
-* Added stats page
+* Added stats page (if bcmath is loaded)
   * Contains:
     * Original Image Size:
       * Original image size before being smushed
@@ -67,5 +69,4 @@ Notes
 
 TODO
 ==
-* .old file cleanup
-* replace with .old file
+* redirect back to the same page you came from after [ignore|smush|revert] action is taken

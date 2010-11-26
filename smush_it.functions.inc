@@ -137,7 +137,7 @@ class smush_it {
    * @staticvar SmushIt $s The smush.it object
    * @staticvar bool $smush_it_testing Whether or not we are in test mode
    * @staticvar string $smush_it_test_image The image that will be used in test mode
-   * @param int $file The id of the file being processed
+   * @param int $file_id The id of the file being processed
    * @return boolean Whether or not the smushing was successful
    */
   static function smush_image($file_id) {

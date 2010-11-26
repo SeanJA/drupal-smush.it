@@ -137,7 +137,8 @@ class smush_it {
    * @staticvar SmushIt $s The smush.it object
    * @staticvar bool $smush_it_testing Whether or not we are in test mode
    * @staticvar string $smush_it_test_image The image that will be used in test mode
-   * @param file $file The file being processed
+   * @param int $file The id of the file being processed
+   * @return boolean Whether or not the smushing was successful
    */
   static function smush_image($file_id) {
     $file = self::load_file($file_id);
@@ -197,7 +198,7 @@ class smush_it {
   }
 
   /**
-   * Save the smushed file
+   * Save the smushed file from the smush.it server
    * @param file $file
    * @param smushed $smushed
    * @return file $file

@@ -2,7 +2,6 @@ Dependencies
 ==
 
 * Drupal 6.x
-* Upload module
 * json functions
 * curl extension
 * PHP 5 (for exceptions and __construct niceties)

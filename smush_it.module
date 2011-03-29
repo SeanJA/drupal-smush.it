@@ -8,7 +8,7 @@ define('BC_LOADED', extension_loaded('bcmath'));
 module_load_include('inc', 'smush_it', 'smush_it.class');
 module_load_include('inc', 'smush_it', 'smush_it.functions');
 if (BC_LOADED) {
-  module_load_include('inc', 'smush_id', 'smush_it.bcfunctions');
+  module_load_include('inc', 'smush_it', 'smush_it.bcfunctions');
 }
 
 /**

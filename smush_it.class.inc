@@ -7,7 +7,6 @@
  * @author Mathew Davies <thepixeldeveloper@googlemail.com>
  * @author SeanJA  http://seanja.com
  */
-
 /**
  * The useragent string that will be passed to smush.it
  * @var string
